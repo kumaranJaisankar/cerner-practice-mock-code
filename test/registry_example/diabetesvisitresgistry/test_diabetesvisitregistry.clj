@@ -57,8 +57,9 @@
       diabetes-millitius-1-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
                             :effective-date (pth/get-date-from-shifted-interval program-end-date -3 :years :start) }
 
-
-      hospital-visit-con-1 {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+      hospital-visit-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_ENC")
+                        :service-date (pth/get-date-from-shifted-interval program-end-date -36 :days :start)}
+      hospital-visit-con-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_PROC")
                                        :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
       hospital-visit-con-2 {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
                             :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
