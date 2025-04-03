@@ -51,7 +51,24 @@
                             :deceased { :deceased false
                                        :date-of-death (pth/get-date-from-shifted-interval program-end-date -30 :days :start)
                                        source {}}}
-      hba1c-test-lt-8-obstype {:display-name"hbalc-6-dot-5-obstype"
+      diabetes-millitius-1-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
+                            :effective-date (pth/get-date-from-shifted-interval program-end-date -60 :days :start) }
+
+      diabetes-millitius-1-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
+                            :effective-date (pth/get-date-from-shifted-interval program-end-date -3 :years :start) }
+
+
+      hospital-visit-con-1 {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+                                       :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
+      hospital-visit-con-2 {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+                            :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
+      hospice-care-clin-current-year {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+                                       :effective-date (pth/get-date-from-shifted-interval program-end-date -20  :days :start) }
+
+      hospice-care-clin-previous-year {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+                                       :effective-date (pth/get-date-from-shifted-interval program-end-date -2 :years :start) }
+
+      hba1c-test-lt-8-obstype {:display-name"hbalc-6-lt-5-obstype"
                                :service-date (pth/get-date-from-shifted-interval program-end-date -10 :days :start)
                                :result-code (itc/build-mock-code "HEMOGLOBIN_A1C_OBSTYPE")
                                :type     ResultValueType/NUMERIC
@@ -68,25 +85,50 @@
               (utils/run-session-test
                 {:description "Person:
                                    * deceased
-                                   * Program-State: identified"
+                                   * Program-State: not-identified"
                  :kb           utils/*kb*
                  :setup        {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr :preferred-demographics deseased-conditon-2)]}}
                  :expectations (program-state->expectaiton :not-identified)})
-               )
-     )
 
-          (utils/run-session-test
-            {:description "Person:
+ (utils/run-session-test
+                {:description "Person:
+                                   * Hospital visti
+                                   * Program-State: identified"
+                 :kb           utils/*kb*
+                 :setup        {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr :preferred-demographics hospital-visit-con-1)]}}
+                 :expectations (program-state->expectaiton :identified)})
+
+              (utils/run-session-test
+                {:description "Person:
                           * age >= 18
-                          * has diabetes type 1
+                          * has Hospicecare during current measurement period
+                          * has hbalc < 8
+                          * Program-State: excluded
+                          * measure-state: not-met"
+                 :kb utils/*kb*
+                 :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                       :preferred-demographics person-age-18
+                                                                       :conditions [hospice-care-clin-current-year]
+                                                                       :results [hbalc-test-lt-8-obstype] ) ] }}
+                 :expectations (measure-and-program-state->expectations
+                                 {:measure {cs-diabetesregistry/hbalc-lt-8-measure :not-met}
+                                  :program-state :excluded} ) })
+
+
+              (utils/run-session-test
+                {:description "Person:
+                          * age >= 18
                           * has hbalc < 8
                           * Program-State: identified
                           * measure-state: met"
-             :kb utils/*kb*
-             :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
-                                                                   :preferred-demographics person-age-18
-                                                                   :conditions [diabetes-mellitus-1-condition]
-                                                                   :results [hbalc-test-lt-8-obstype] ) ] }}
-             :expectations (measure-and-program-state->expectations
-                              {:measure {cs-diabetesregistry/hbalc-lt-8-measure :met}
-                               :program-state :identified} ) })
+                 :kb utils/*kb*
+                 :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                       :preferred-demographics person-age-18
+                                                                       :conditions [diabetes-mellitus-1-condition]
+                                                                       :results [hbalc-test-lt-8-obstype] ) ] }}
+                 :expectations (measure-and-program-state->expectations
+                                 {:measure {cs-diabetesregistry/hbalc-lt-8-measure :met}
+                                  :program-state :identified} ) })
+               )
+     )
+
