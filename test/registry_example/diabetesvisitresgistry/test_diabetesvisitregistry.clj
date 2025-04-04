@@ -5,6 +5,7 @@
 ;program-not-identified
 ;program-excluded
 ;program-stratified
+
 ;measure-not-included
 ;measure-met
 ;measure-not-met
@@ -54,15 +55,19 @@
       diabetes-millitius-1-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
                             :effective-date (pth/get-date-from-shifted-interval program-end-date -60 :days :start) }
 
-      diabetes-millitius-1-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
+      diabetes-millitius-2-con-1 {:condition-code (itc/build-mock-code "DIABETES_MILLITIUS_TYPEl_1")
                             :effective-date (pth/get-date-from-shifted-interval program-end-date -3 :years :start) }
 
-      hospital-visit-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_ENC")
+      hospital-visit-enc-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_ENC")
                         :service-date (pth/get-date-from-shifted-interval program-end-date -36 :days :start)}
-      hospital-visit-con-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_PROC")
+      hospital-visit-proc-2 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_PROC")
                                        :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
-      hospital-visit-con-2 {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
+
+      fall-visit-con-enc-1 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_ENC")
                             :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
+      fall-visit-con-proc-2 {:encounter-code (itc/build-mock-code "HOSPITAL_VISIT_PROC")
+                                       :effective-date (pth/get-date-from-shifted-interval program-end-date -50 :days :start) }
+
       hospice-care-clin-current-year {:condition-code (itc/build-mock-code "HOSPICE_CARE_CLIN")
                                        :effective-date (pth/get-date-from-shifted-interval program-end-date -20  :days :start) }
 
@@ -91,13 +96,44 @@
                  :setup        {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr :preferred-demographics deseased-conditon-2)]}}
                  :expectations (program-state->expectaiton :not-identified)})
 
- (utils/run-session-test
+              (utils/run-session-test  {:description "Person:
+                                            * Diabetes Type 2 and fall visit in current measurement period
+                                             * Registry Inclusion criteria
+                                              * Program-state: identified"
+                                        :kb utils/*kb*
+                                        :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                                              :preferred-demographics person-age-18
+                                                                                              :conditions [diabetes-mellitus-2-condition]
+                                                                                              :encounters [fall-visit-con-enc-1])]}}
+                                        :expectations (program-state->expectations :identified)})
+
+               (utils/run-session-test
+                              {:description "Person:
+                                                 * fall visit and fall visit in previous measurement period
+                                                 * Program-State: identified"
+                               :kb           utils/*kb*
+                               :setup        {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                                            :preferred-demographics hospital-visit-con-1)]
+                                                                             :conditions [diabetes-mellitus-2-condition]
+                                                                             :procedures [fall-visit-con-proc-1]}}
+                               :expectations (program-state->expectaiton :identified)})
+
+              (utils/run-session-test
                 {:description "Person:
-                                   * Hospital visti
-                                   * Program-State: identified"
-                 :kb           utils/*kb*
-                 :setup        {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr :preferred-demographics hospital-visit-con-1)]}}
-                 :expectations (program-state->expectaiton :identified)})
+                          * age <= 18
+                          * has Hospicecare during current measurement period
+                          * has hbalc < 8
+                          * Program-State: not-included
+                          * measure-state: not-met"
+                 :kb utils/*kb*
+                 :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                       :preferred-demographics person-age-lt-18
+                                                                       :conditions [hospice-care-clin-current-year]
+                                                                       :results [hbalc-test-lt-8-obstype] ) ] }}
+                 :expectations (measure-and-program-state->expectations
+                                 {:measure {cs-diabetesregistry/hbalc-lt-8-measure :not-met}
+                                  :program-state :not-included} ) })
+
 
               (utils/run-session-test
                 {:description "Person:
@@ -113,6 +149,21 @@
                                                                        :results [hbalc-test-lt-8-obstype] ) ] }}
                  :expectations (measure-and-program-state->expectations
                                  {:measure {cs-diabetesregistry/hbalc-lt-8-measure :not-met}
+                                  :program-state :excluded} ) })
+              (utils/run-session-test
+                {:description "Person:
+                          * age >= 18
+                          * has Hospicecare during current measurement period
+                          * has hbalc < 8
+                          * Program-State: excluded
+                          * measure-state: not-met"
+                 :kb utils/*kb*
+                 :setup {:pop/pop-health-person-record {:facts [(assoc utils/base-phpr
+                                                                       :preferred-demographics person-age-18
+                                                                       :conditions [hospice-care-clin-previous-year]
+                                                                       :results [hbalc-test-lt-8-obstype] ) ] }}
+                 :expectations (measure-and-program-state->expectations
+                                 {:measure {cs-diabetesregistry/hbalc-lt-8-measure :met}
                                   :program-state :excluded} ) })
 
 

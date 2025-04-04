@@ -22,8 +22,8 @@
                (settings
                  program-end-date <- {:name program-end-date :group "cerner-standard"} ; these are imports from the fact_setting file
                  program-start-date <- { :name program-start-date :group "cerner-standard"})
-               (date-range :start program-start-date
-                           :end program-end-date))
+               (date-range :start **program-start-date
+                           :end **program-end-date))
 
 (def-component diabetes-mellitus-type2
               (fact-type DiabetesMellitusType2)

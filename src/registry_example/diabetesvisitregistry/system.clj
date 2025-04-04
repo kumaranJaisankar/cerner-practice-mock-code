@@ -19,7 +19,7 @@
 ;(def-concept-context-reltn hospital-care-clin
 ;  {:concept-alias "HOSPITAL_VISIT_ENC" :context-id "" }) ;additional modal "procedure"
 
-(def-concept-context-reltn hospital-care-clin
+(def-concept-context-reltn fall-visit-clin
   {:concept-alias "FALL_VISIT_ENC" :context-id "" })        ;default modal YES
 ;(def-concept-context-reltn hospital-care-clin
 ;  {:concept-alias "FALL_VISIT_ENC" :context-id "" })  ;additional modal "procedure"
